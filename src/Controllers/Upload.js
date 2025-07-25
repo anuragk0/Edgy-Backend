@@ -22,9 +22,8 @@ const generateFlashCards = catchAsyncError(async (req, res, next) => {
     const parsed = await pdfParse(pdfBuffer);
     const rawText = parsed.text;
 
-    // Batching logic for generateContent
-    // Split rawText into smaller chunks (e.g., by paragraph, or every N characters)
-    const maxChunkLength = 3000; // adjust as needed for LLM limits
+
+    const maxChunkLength = 3000; 
     const paragraphs = rawText.split('\n').filter(p => p.trim().length > 0);
     let batchChunks = [];
     let batchChunk = '';
@@ -46,7 +45,6 @@ const generateFlashCards = catchAsyncError(async (req, res, next) => {
                 qaPairs = qaPairs.concat(pairs);
             }
         } catch (e) {
-            // Optionally log error and continue
             console.error('Error generating content for chunk:', e);
         }
     }
@@ -63,6 +61,12 @@ const generateFlashCards = catchAsyncError(async (req, res, next) => {
             ease: qa.ease,
             interval: qa.interval,
             lastReviewed: qa.lastReviewed
+                ? new Date(
+                    typeof qa.lastReviewed === "string"
+                      ? qa.lastReviewed.replace(/\[UTC\]$/, "")
+                      : qa.lastReviewed
+                  )
+                : undefined
         }))
     );
     if (!flashcards) {
