@@ -15,7 +15,10 @@ const sectionSchema = new Schema({
     description: {
         type: String,
         trim: true
-    }
+    },
+    files: [{
+        type: String
+    }]
 }, {
     timestamps: true
 })

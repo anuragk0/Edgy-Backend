@@ -2,12 +2,14 @@ const express = require('express');
 const cookieParser = require("cookie-parser");
 const cors = require('cors');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
 dotenv.config();
 
 const app = express();
 
+app.use(helmet());
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
     credentials: true
 }));
 
@@ -16,11 +18,25 @@ app.use(express.urlencoded({extended: true}))
 app.use(cookieParser())
 
 
+
 const userRouter = require('./Router/User');
 app.use('/api/user', userRouter);
 
 const sectionRouter = require('./Router/Section');
 app.use('/api/section', sectionRouter);
+
+const uploadRouter = require('./Router/Upload');
+app.use('/api/upload', uploadRouter);
+
+const flashRouter = require('./Router/FlashCard');
+app.use('/api/flashcards', flashRouter);
+
+
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../client/build')));
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+});
 
 // 404 handler
 app.use((req, res, next) => {
@@ -39,5 +55,6 @@ app.use((err, req, res, next) => {
         stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
+
 
 module.exports = app;

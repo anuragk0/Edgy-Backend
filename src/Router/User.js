@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { signUp, logIn, logout, isAuthenticated, getProfile } = require('../Controllers/User');
+const { otpIpLimiter, otpGlobalLimiter } = require('../../middleware/otpLimiter');
 
 // Public routes
 router.post('/signup/initiate', signUp.initiate);

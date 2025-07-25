@@ -35,7 +35,7 @@ const signUpSchema = new Schema({
     timestamps: true
 });
 
-// Add TTL index for tokenExpiry
+
 signUpSchema.index({otpExpiry: 1}, {expireAfterSeconds: 0});
 signUpSchema.index({ tokenExpiry: 1 }, { expireAfterSeconds: 0 });
 

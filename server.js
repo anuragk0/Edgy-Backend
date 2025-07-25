@@ -13,14 +13,12 @@ process.on('uncaughtException', (err) => {
 
 const server = http.createServer(app);
 const port = process.env.PORT || 8001;
-console.log('Attempting to start server on port:', port);
 
 const startServer = async () => {
   try {
     const message = await connectDB();
-    console.log(message);
     server.listen(port, () => {
-      console.log(`Server is connected on port ${port}`)
+      console.log(`Server is running on port ${port}`)
     })
   } catch (error) {
     console.error('Database connection error', error);

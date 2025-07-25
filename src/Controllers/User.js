@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt')
 const User = require('../Model/User')
 const catchAsyncError = require("../../middleware/catchAsyncError");
 const ErrorHandling = require("../../utils/ErrorHandling");
-const {generateOtp, generateToken} = require('../../utils/Otp');
+const {generateOtp, generateToken, sendOtpEmail} = require('../../utils/Otp');
 const SignUp = require('../Model/SignUp')
 const SendToken = require('../../utils/SendToken')
 const jwt = require('jsonwebtoken')
@@ -26,6 +26,7 @@ const signUp = {
         await SignUp.deleteOne({ email });
 
         const OTP = generateOtp();
+
         if (OTP.length != process.env.OTP_LENGTH) return next(new ErrorHandling(500, "Error in generating OTP"));
         
         const otpExpiry = new Date(Date.now() + 2 * 60 * 1000);
@@ -39,13 +40,11 @@ const signUp = {
 
         await newSignup.save();
     
-        const params = {
-            Message: `Your OTP verification code is ${OTP}. This code will expire in 2 minutes.`,
-            Email: `${email}`
+        try {
+            await sendOtpEmail(email, OTP);
+        } catch (err) {
+            return next(new ErrorHandling(500, "Failed to send OTP email"));
         }
-    
-        console.log(params);
-        // send email using nodemailer later
 
         res.status(200).json({
             success: true,
@@ -55,7 +54,6 @@ const signUp = {
 
     verifyOtp: catchAsyncError(async (req, res, next) => {
         const {email, otp} = req.body;
-        console.log('Verifying OTP for:', { email, otp });
 
         if (!email){
             return next(new ErrorHandling(400, "Email Id is required"))
@@ -64,25 +62,16 @@ const signUp = {
         if (!otp) return next(new ErrorHandling(400, "OTP is required"))
     
         const user = await SignUp.findOne({email});
-        console.log('Found user:', user);
 
         if (!user) {
             return next(new ErrorHandling(400, "User not found"));
         }
 
         if (user.otpExpiry < new Date()) {
-            console.log('OTP expired:', { 
-                otpExpiry: user.otpExpiry, 
-                currentTime: new Date() 
-            });
             return next(new ErrorHandling(400, "OTP has expired. Please request a new one."));
         }
 
         if (user.otp !== otp) {
-            console.log('OTP mismatch:', { 
-                receivedOtp: otp, 
-                storedOtp: user.otp 
-            });
             return next(new ErrorHandling(400, "Invalid OTP"));
         }
 
@@ -94,14 +83,11 @@ const signUp = {
             {
                 token: tokenVerification,
                 tokenExpiry: tokenExpiry,
-                otp: "verified",  // Set to a non-null value
-                otpExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000)  // Set to a future date
+                otp: "verified", 
+                otpExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000) 
             },
             { new: true }
         );
-        console.log("Token at this stage: ", tokenVerification)
-
-        console.log('OTP verified successfully, token generated:', tokenVerification);
 
         res.status(200).json({
             success: true,
@@ -113,7 +99,6 @@ const signUp = {
 
     saveUser: catchAsyncError(async (req, res, next) => {
         const {token, password, confirmPassword} = req.body;
-        console.log('Saving user with token:', token);
 
         if (!token) return next( new ErrorHandling(400, "Verification token is required"));
 
@@ -129,10 +114,8 @@ const signUp = {
             token, 
             tokenExpiry: {$gt : new Date()}
         });
-        console.log('Found user with token:', user);
 
         if (!user) {
-            console.log('Token verification failed. Current time:', new Date());
             return next(new ErrorHandling(400, "Invalid or Expired Verification token"))
         }
         
@@ -143,8 +126,6 @@ const signUp = {
             name: user.name,
             password: hashedPassword
         })
-
-        console.log('Creating new user:', { email: user.email, name: user.name });
 
         await newUser.save();
         await SignUp.deleteOne({_id: user._id});
@@ -165,7 +146,6 @@ const logIn = catchAsyncError( async (req, res, next) => {
     if (!isCorrect) return next (new ErrorHandling (401, "Incorrect Password"));
     
     SendToken(user, res, 200);
-    console.log("Logged In successfully")
 
 })
 
