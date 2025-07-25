@@ -32,12 +32,6 @@ const flashRouter = require('./Router/FlashCard');
 app.use('/api/flashcards', flashRouter);
 
 
-const path = require('path');
-app.use(express.static(path.join(__dirname, '../client/build')));
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-});
-
 // 404 handler
 app.use((req, res, next) => {
     res.status(404).json({
