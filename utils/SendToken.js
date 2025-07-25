@@ -3,17 +3,20 @@ const sendToken = (user, res, statusCode) => {
 
     const options = {
         httpOnly: true,
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    }
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        sameSite: 'none', 
+        secure: true,    
+        path: '/'
+    };
 
     res.status(statusCode)
         .cookie("Edgy_TOKEN", token, options)
-            .json({
-                success: true,
-                user,
-                token,
-                message: "Successfully Logged In"
-            })
-}
+        .json({
+            success: true,
+            user,
+            token,
+            message: "Successfully Logged In"
+        });
+};
 
 module.exports = sendToken;
